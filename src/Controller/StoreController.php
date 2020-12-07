@@ -5,6 +5,7 @@ namespace App\Controller;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use App\Entity\Books;
 
 class StoreController extends AbstractController
 {
@@ -19,12 +20,15 @@ class StoreController extends AbstractController
     }
 
     /**
-     * @Route("/Books/1", name="details")
+     * @Route("/Books/{id}", name="details")
      */
-    public function details(): Response
+    public function details($id): Response
     {
+        $repo = $this->getDoctrine()->getRepository(Books::class);
+        $book = $repo->find($id);
+
         return $this->render('store/details.html.twig', [
-            'controller_name' => 'StoreController',
+            'book' => $book
         ]);
     }
 
@@ -33,8 +37,13 @@ class StoreController extends AbstractController
      */
     public function books(): Response
     {
+        $repo = $this->getDoctrine()->getRepository(Books::class);
+        $books = $repo->findAll();
+
+
         return $this->render('store/books.html.twig', [
             'controller_name' => 'StoreController',
+            'books' => $books
         ]);
     }
 
