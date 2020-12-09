@@ -3,43 +3,39 @@
 namespace App\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Doctrine\Persistence\ObjectManager;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Form\Extension\Core\Type\SubmitType;
-use Symfony\Component\Form\Extension\Core\Type\TextType;
-use Symfony\Component\Form\Extension\Core\Type\EmailType;
-use Symfony\Component\Form\Extension\Core\Type\PasswordType;
-
+use App\Form\LoginType;
+use App\Form\RegisterType;
 use App\Entity\Books;
 use App\Entity\Users;
 
 class StoreController extends AbstractController
 {
-
     /**
      * @Route("/Register", name="register")
      */
-    public function register(Request $request, ObjectManager $manager): Response
+    public function register(Request $request): Response
     {
 
+        $entityManager = $this->getDoctrine()->getManager();
+
         $user = new Users();
-        $form = $this->createFormBuilder($user)
-                     ->add('username',TextType::class,["attr" => ["placeholder" => "Username"]])
-                     ->add('email',EmailType::class,["attr" => ["placeholder" => "Email"]])
-                     ->add('password',PasswordType::class,["attr" => ["placeholder" => "Password"]])
-                     ->add('save', SubmitType::class, ['label' => 'Register'])
-                     ->getForm();
+        $form = $this->createForm(RegisterType::class,$user);
 
+        $form->handleRequest($request);
 
-                     $manager->persist($user);
-                     $manager->flush();
-                     
+        if ($form->isSubmitted() && $form->isValid()) {
+            $entityManager->persist($user);
+            $entityManager->flush();
+
+            return $this->redirectToRoute('books');
+        }
+
         return $this->render('store/register.html.twig', [
             'formUser' => $form->createView(),
         ]);
-
     }
 
     /**
@@ -48,12 +44,17 @@ class StoreController extends AbstractController
     public function login(Request $request): Response
     {
         $user = new Users();
-        $form = $this->createFormBuilder($user)
-                     ->add('email',EmailType::class,["attr" => ["placeholder" => "Email"]])
-                     ->add('password',PasswordType::class,["attr" => ["placeholder" => "Password"]])
-                     ->add('save', SubmitType::class, ['label' => 'Login'])
-                     ->getForm();
+        $form = $this->createForm(LoginType::class,$user);
 
+        $form->handleRequest($request);
+
+        $loginUser = $this->getDoctrine()
+            ->getRepository(Users::class)
+            ->findOneBy(['email' => $user->getEmail()]);
+
+        if ($loginUser && $loginUser->getPassword() === $user->getPassword()) {
+            return $this->redirectToRoute('books');
+        }
 
         return $this->render('store/login.html.twig', [
             'formUser' => $form->createView(),
@@ -65,8 +66,9 @@ class StoreController extends AbstractController
      */
     public function details($id): Response
     {
-        $repo = $this->getDoctrine()->getRepository(Books::class);
-        $book = $repo->find($id);
+        $book = $this->getDoctrine()
+            ->getRepository(Books::class)
+            ->find($id);
 
         return $this->render('store/details.html.twig', [
             'book' => $book

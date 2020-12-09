@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use App\Repository\UsersRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
 
 /**
  * @ORM\Entity(repositoryClass=UsersRepository::class)
@@ -19,16 +20,20 @@ class Users
 
     /**
      * @ORM\Column(type="string", length=255)
+     * @Assert\Email(message = "Please enter a valid email.")
      */
     private $email;
 
     /**
      * @ORM\Column(type="string", length=255)
+     * @Assert\Length(min=5,max=255)
      */
     private $username;
 
     /**
      * @ORM\Column(type="string", length=255)
+     * @Assert\Regex(pattern = "@[a-z]@",message = "Please enter a valid password.")
+     * @Assert\Length(min=6,max=255)
      */
     private $password;
 
